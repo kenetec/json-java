@@ -3,25 +3,25 @@ package com.github.kenetec.json;
 import java.util.*;
 import java.io.File;
 
-public class JsonParser {
+public class Parser {
     private Lexer lexer;
     private Token currentToken;
 
     // Create a controllable nested hashmap class
     private JsonObjectGenerator jsonObjectGenerator = new JsonObjectGenerator();
 
-    public JsonParser(String input) {
+    public Parser(String input) {
         this.lexer = new Lexer(input);
     }
 
-    public JsonParser(File file) {
+    public Parser(File file) {
         this.lexer = new Lexer(file);
     }
 
     public JsonObject generate() throws UnexpectedTokenException, UnexpectedCharacterException {
         this.currentToken = lexer.next();
 
-        block();
+        startBlock();
 
         return jsonObjectGenerator.generate();
     }
@@ -33,6 +33,7 @@ public class JsonParser {
      * @throws UnexpectedTokenException
      */
     private Token consume(TokenType tokenType) throws UnexpectedTokenException {
+
         if (currentToken.getType() == tokenType) {
             Token ret = currentToken;
 
@@ -58,11 +59,11 @@ public class JsonParser {
     }
 
     /**
-     * void block()
+     * void startBlock()
      *
-     * Called at the start of '{'
+     * Called at the start of the file
      */
-    private void block() throws UnexpectedTokenException {
+    private void startBlock() throws UnexpectedTokenException {
         // Look for pair or '}'
         consume(TokenType.L_BRACE);
 
@@ -72,7 +73,6 @@ public class JsonParser {
             pair();
 
         consume(TokenType.R_BRACE);
-
         consume(TokenType.EOF);
     }
 
@@ -124,9 +124,8 @@ public class JsonParser {
             jsonObjectGenerator.putInScope(key, val);
         } else if (found(TokenType.NULL)) {
             Token token = consume(TokenType.NULL);
-            Object val = null;
 
-            jsonObjectGenerator.putInScope(key, val);
+            jsonObjectGenerator.putInScope(key, null);
         } else if (found(TokenType.L_BRACE)) {
             block(key);
         } else if (found(TokenType.L_BRACKET)) {

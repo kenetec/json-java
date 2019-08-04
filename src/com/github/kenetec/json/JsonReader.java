@@ -6,7 +6,7 @@ import java.io.File;
 public class JsonReader {
     public static JsonObject read(String text) {
         try {
-            JsonParser parser = new JsonParser(text);
+            Parser parser = new Parser(text);
 
             return parser.generate();
         } catch (UnexpectedCharacterException | UnexpectedTokenException e) {
@@ -18,7 +18,7 @@ public class JsonReader {
 
     public static JsonObject read(File file) {
         try {
-            JsonParser parser = new JsonParser(file);
+            Parser parser = new Parser(file);
 
             return parser.generate();
         } catch (UnexpectedCharacterException | UnexpectedTokenException e) {

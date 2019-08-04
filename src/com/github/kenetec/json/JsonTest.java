@@ -1,10 +1,10 @@
 package com.github.kenetec.json;
 
- import java.io.File;
- import java.io.FileWriter;
- import java.io.IOException;
+ import java.io.*;
  import java.util.ArrayList;
  import java.util.Arrays;
+
+ import static java.lang.System.out;
 
  public class JsonTest {
      public static void main(String[] args) {

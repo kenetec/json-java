@@ -350,7 +350,7 @@ public class JsonObject {
             Object val = entry.getValue();
 
             // default "[data]"
-            String data = "\"" + val.toString() + "\"";
+            String data = "\"" + ((val != null) ? val.toString() : "null") + "\"";
 
             if (val instanceof JsonObject) {
                 // "{...}"

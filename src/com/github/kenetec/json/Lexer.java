@@ -12,7 +12,7 @@ import java.util.Scanner;
  * Numbers are integers or floating point.
  */
 class Lexer {
-    private static String whitespace = " \n\t";
+    private static String whitespace = " \n\t\r";
     private static String quoteChar = "\"";
     private static String symbols = "{}[]:,";
     private static String trueStr = "true";
@@ -112,9 +112,9 @@ class Lexer {
                 return new Token(str, (str.contains(trueStr) || str.contains(falseStr)) ? TokenType.BOOL : TokenType.NULL);
             }
 
+            throw new UnexpectedCharacterException("A valid character", cs);
+        } else {
             return new Token("", TokenType.EOF);
         }
-
-        return new Token("", TokenType.EOF);
     }
 }
