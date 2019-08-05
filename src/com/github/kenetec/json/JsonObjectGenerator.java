@@ -8,8 +8,20 @@ import java.util.*;
  */
 class JsonObjectGenerator {
     private LinkedList<Scope> scopes = new LinkedList<>();
+    private TokenType startTokenType;
 
-    JsonObjectGenerator() {
+    JsonObjectGenerator() {}
+
+    JsonObjectGenerator(TokenType startTokenType) {
+        this.startTokenType = startTokenType;
+    }
+
+    public TokenType getStartTokenType() {
+        return startTokenType;
+    }
+
+    public void setStartTokenType(TokenType startTokenType) {
+        this.startTokenType = startTokenType;
     }
 
     /**
@@ -43,6 +55,14 @@ class JsonObjectGenerator {
     }
 
     /**
+     * Returns current scope without committing
+     * @return Scope
+     */
+    Scope exitNoCommit() {
+        return scopes.removeLast();
+    }
+
+    /**
      * Generates a HashMap with parsed values.
      * @return the map.
      */
@@ -57,6 +77,6 @@ class JsonObjectGenerator {
 
         HashMap<String, Object> map = scopesCopy.get(0).getData();
 
-        return new JsonObject(map);
+        return new JsonObject(map, startTokenType);
     }
 }

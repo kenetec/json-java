@@ -1,7 +1,7 @@
 package com.github.kenetec.json;
 
-public class UnexpectedCharacterException extends Exception {
-    public UnexpectedCharacterException(String expected, String received) {
-        super(String.format("Expected \"%s\" got \"%s\" instead!", expected, received));
+class UnexpectedCharacterException extends Exception {
+    UnexpectedCharacterException(String expected, String received, int line) {
+        super(String.format("[Line %d] Expected \"%s\" got \"%s\" instead!", line, expected, received));
     }
 }

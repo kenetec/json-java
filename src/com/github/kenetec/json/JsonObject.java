@@ -15,6 +15,7 @@ public class JsonObject {
      * the result of -> "key": {}
      */
     private HashMap<String, Object> map = new HashMap<String, Object>();
+    private TokenType startTokenType;
 
     public JsonObject() {}
 
@@ -24,6 +25,11 @@ public class JsonObject {
      */
     public JsonObject(HashMap<String, Object> raw) {
         generateMap(raw);
+    }
+
+    public JsonObject(HashMap<String, Object> raw, TokenType startTokenType) {
+        generateMap(raw);
+        this.startTokenType = startTokenType;
     }
 
     /**
@@ -312,18 +318,22 @@ public class JsonObject {
      * @return
      */
     public String prettyDump() {
-        return recursivePrettyDump(1);
+        if (this.map.get("") != null) {
+            return formatList((List<Object>) this.map.get(""), 0);
+        }
+
+        return formatSelf(0);
     }
 
     public String toString() {
-        return dump();
+        return prettyDump();
     }
 
     public HashMap<String, Object> getMap() {
         return map;
     }
 
-    private void generateMap(HashMap<String, Object> raw) {
+    private void generateMap(HashMap <String, Object> raw) {
         for (Map.Entry<String, Object> entry : raw.entrySet()) {
             String key = entry.getKey();
             Object val = entry.getValue();
@@ -338,71 +348,79 @@ public class JsonObject {
         }
     }
 
-    /**
-     * Dumps json string with tabs
-     * @return json string
-     */
-    private String recursivePrettyDump(int tabs) {
-        String dumpStr = "{\n";
+    private String formatSelf(int tabs) {
+        String str = "{\n";
 
         for (Map.Entry<String, Object> entry : this.map.entrySet()) {
             String key = entry.getKey();
             Object val = entry.getValue();
 
-            // default "[data]"
-            String data = "\"" + ((val != null) ? val.toString() : "null") + "\"";
-
-            if (val instanceof JsonObject) {
-                // "{...}"
-                JsonObject jsonObject = (JsonObject) val;
-                data = jsonObject.recursivePrettyDump(tabs+1);
-            } else if (val instanceof ArrayList) {
-                // "[...]"
-                ArrayList<String> arrayList = (ArrayList<String>) val;
-                data = "[\n";
-
-                for (String item : arrayList) {
-                    // tab padding for array entry
-                    for (int i = 0; i < tabs+1; i++) {
-                        data += "\t";
-                    }
-
-                    data += "\"" + item + "\",\n";
-                }
-
-                // remove ",\n"
-                data = data.substring(0, data.length()-2);
-                data += "\n";
-
-                // tab padding for ']'
-                for (int i = 0; i < tabs; i++) {
-                    data += "\t";
-                }
-
-                data += "]";
-            }
-
             // tab padding for entry
-            for (int i = 0; i < tabs; i++) {
-                dumpStr += "\t";
+            for (int i = 0; i < tabs + 1; i++) {
+                str += "\t";
             }
 
             // add entry
-            dumpStr += "\"" + entry.getKey() + "\": " + data + ",\n";
+            str += "\"" + key + "\": " + formatItem(val, tabs) + ",\n";
         }
 
         // to remove last comma
-        dumpStr = dumpStr.substring(0, dumpStr.length()-2);
+        str = str.substring(0, str.length()-2);
 
-        dumpStr += "\n";
+        str += "\n";
 
         // tab padding for '}'
-        for (int i = 0; i < tabs-1; i++) {
-            dumpStr += "\t";
+        for (int i = 0; i < tabs; i++) {
+            str += "\t";
         }
 
-        dumpStr += "}";
+        str += "}";
 
-        return dumpStr;
+        return str;
+    }
+
+    private String formatList(List<Object> list, int tabs) {
+        String str = "";
+
+        // "[...]"
+        str = "[\n";
+
+        for (Object item : list) {
+            // tab padding for array entry
+            for (int i = 0; i < tabs+1; i++) {
+                str += "\t";
+            }
+
+            str +=  formatItem(item, tabs) + ",\n";
+        }
+
+        // remove ",\n"
+        str = str.substring(0, str.length()-2);
+        str += "\n";
+
+        // tab padding for ']'
+        for (int i = 0; i < tabs; i++) {
+            str += "\t";
+        }
+
+        str += "]";
+
+        return str;
+    }
+
+    private String formatItem(Object item, int tabs) {
+        String formatted = "";
+
+        if (item instanceof JsonObject) {
+            formatted = ((JsonObject) item).formatSelf(tabs + 1);
+        } else if (item instanceof String) {
+            formatted = "\"" + (String) item + "\"";
+        } else if (item instanceof List) {
+            formatted = formatList((List<Object>) item, tabs + 1);
+        } else {
+            formatted = (item != null) ? item.toString() : "null";
+        }
+
+        return formatted;
     }
 }

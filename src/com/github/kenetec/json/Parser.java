@@ -3,7 +3,7 @@ package com.github.kenetec.json;
 import java.util.*;
 import java.io.File;
 
-public class Parser {
+class Parser {
     private Lexer lexer;
     private Token currentToken;
 
@@ -21,7 +21,7 @@ public class Parser {
     public JsonObject generate() throws UnexpectedTokenException, UnexpectedCharacterException {
         this.currentToken = lexer.next();
 
-        startBlock();
+        initBlock();
 
         return jsonObjectGenerator.generate();
     }
@@ -51,7 +51,7 @@ public class Parser {
             return ret;
         }
 
-        throw new UnexpectedTokenException(tokenType, currentToken.getType());
+        throw new UnexpectedTokenException(tokenType, currentToken.getType(), lexer.getCurrentLine());
     }
 
     private boolean found(TokenType tokenType) {
@@ -59,21 +59,33 @@ public class Parser {
     }
 
     /**
-     * void startBlock()
+     * void initBlock()
      *
      * Called at the start of the file
      */
-    private void startBlock() throws UnexpectedTokenException {
+    private void initBlock() throws UnexpectedTokenException {
         // Look for pair or '}'
-        consume(TokenType.L_BRACE);
 
-        jsonObjectGenerator.createScope("");
+        if (found(TokenType.L_BRACE)) {
+            consume(TokenType.L_BRACE);
 
-        while (found(TokenType.STR))
-            pair();
+            jsonObjectGenerator.setStartTokenType(TokenType.L_BRACE);
+            jsonObjectGenerator.createScope("");
 
-        consume(TokenType.R_BRACE);
-        consume(TokenType.EOF);
+            while (found(TokenType.STR))
+                pair();
+
+            consume(TokenType.R_BRACE);
+            consume(TokenType.EOF);
+        } else if (found(TokenType.L_BRACKET)) {
+            jsonObjectGenerator.setStartTokenType(TokenType.L_BRACKET);
+            jsonObjectGenerator.createScope("");
+
+            List<Object> entries = array();
+            jsonObjectGenerator.putInScope("", entries);
+
+            consume(TokenType.EOF);
+        }
     }
 
     /**
@@ -93,6 +105,21 @@ public class Parser {
         consume(TokenType.R_BRACE);
 
         jsonObjectGenerator.exitScope();
+    }
+
+
+    private Scope anonBlock() throws UnexpectedTokenException {
+        // Look for pair or '}'
+        consume(TokenType.L_BRACE);
+
+        jsonObjectGenerator.createScope("");
+
+        while (found(TokenType.STR))
+            pair();
+
+        consume(TokenType.R_BRACE);
+
+        return jsonObjectGenerator.exitNoCommit();
     }
 
     /**
@@ -129,7 +156,9 @@ public class Parser {
         } else if (found(TokenType.L_BRACE)) {
             block(key);
         } else if (found(TokenType.L_BRACKET)) {
-            array(key);
+            List<Object> entries = array();
+
+            jsonObjectGenerator.putInScope(key, entries);
         }
 
         if (found(TokenType.COMMA)) {
@@ -140,17 +169,17 @@ public class Parser {
     }
 
     /**
-     * void array()
+     * List<String> array()
      * @throws UnexpectedTokenException
      *
      * Gets array strings
      */
-    private void array(String key) throws UnexpectedTokenException {
+    private List<Object> array() throws UnexpectedTokenException {
         // consume left bracket
         consume(TokenType.L_BRACKET);
 
         // Array entry
-        ArrayList<String> entries = new ArrayList<>();
+        ArrayList<Object> entries = new ArrayList<>();
 
         while (!found(TokenType.R_BRACKET)) {
             Token entry = null;
@@ -163,10 +192,11 @@ public class Parser {
                 entry = consume(TokenType.BOOL);
             } else if (found(TokenType.L_BRACE)) {
                 // object
-                // to be continued.
+                entries.add(new JsonObject(anonBlock().getData()));
+                continue;
             } else if (found(TokenType.L_BRACKET)) {
                 // list
-                // to be continued.
+                entries.add(array());
             }
 
             // add entry
@@ -183,23 +213,9 @@ public class Parser {
             }
         }
 
-        jsonObjectGenerator.putInScope(key, entries);
-
         // consume right bracket
         consume(TokenType.R_BRACKET);
-    }
 
-    /**
-     * void arrayEntry()
-     * @throws UnexpectedTokenException
-     *
-     * Get array entry " ",
-     */
-    private Token arrayStrEntry() throws UnexpectedTokenException {
-        Token entry = consume(TokenType.STR);
-
-
-
-        return entry;
+        return entries;
     }
 }
